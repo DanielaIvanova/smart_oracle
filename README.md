@@ -51,7 +51,7 @@ iex -S mix
 5. **(OPTIONAL)** You can make a query to your own oracle, in order to test the oracle: 
 ``` elixir
 state = SmartOracle.get_state # Gets the state, needed to get a client
-SmartOracle.new_query(state.client, "ETHBTC", %{type: :relative, value: 5000}, 1000) #Makes a query regarding ETH to BTC information
-SmartOracle.new_query(state.client, "BTCETH", %{type: :relative, value: 5000}, 1000) # Makes a query regarding BTC to ETH information
+SmartOracle.new_query(state.client, "LINKETH", %{type: :relative, value: 5000}, 1000) #Makes a query regarding LINK to ETH information
+SmartOracle.new_query(state.client, "LINKBTC", %{type: :relative, value: 5000}, 1000) # Makes a query regarding LINK to BTC information
 Core.Oracle.get_queries(state.client, state.oracle_id) # Lists all queries and you should see that they should have response from oracle(you might have to wait 5 seconds and execute the command again if there are no responses from the oracle)
 ```
