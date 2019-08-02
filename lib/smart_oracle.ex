@@ -30,7 +30,7 @@ defmodule SmartOracle do
     GenServer.call(__MODULE__, :get_queries)
   end
 
-  def query(client, query, query_ttl, response_ttl_value) do
+  def new_query(client, query, query_ttl, response_ttl_value) do
     GenServer.call(__MODULE__, {:query, client, query, query_ttl, response_ttl_value})
   end
 
@@ -44,26 +44,28 @@ defmodule SmartOracle do
     possible_oracle_id = "ok_" <> rest
 
     with {:ok, _} <- Core.Oracle.get_oracle(client, possible_oracle_id) do
+      schedule_work()
+
       {:ok,
        %{
          client: client,
          oracle_id: possible_oracle_id,
          query_format: query_format,
-         response_format: response_format,
-         query_ids: []
+         response_format: response_format
        }}
     else
       {:error, _} ->
         {:ok, %{oracle_id: oracle_id}} =
           Core.Oracle.register(client, query_format, response_format, ttl, query_fee)
 
+        schedule_work()
+
         {:ok,
          %{
            client: client,
            oracle_id: oracle_id,
            query_format: query_format,
-           response_format: response_format,
-           query_ids: []
+           response_format: response_format
          }}
     end
   end
@@ -80,62 +82,42 @@ defmodule SmartOracle do
   def handle_call(
         {:query, client, query, query_ttl, response_ttl_value},
         _from,
-        %{oracle_id: oracle_id, query_ids: query_ids} = state
+        %{oracle_id: oracle_id} = state
       ) do
-    {:ok, %{query_id: query_id}} =
-      Core.Oracle.query(client, oracle_id, query, query_ttl, response_ttl_value)
+    Core.Oracle.query(client, oracle_id, query, query_ttl, response_ttl_value)
 
-    new_state = %{state | query_ids: [query_id | query_ids]}
-    {:reply, new_state, new_state}
+    {:reply, :ok, state}
   end
 
-  # def respond(state, response_ttl) do
-  #   {:ok, queries} = Core.Oracle.get_queries(state.client, state.oracle_id)
-  #   unresponded_queries = Enum.filter(queries, fn q -> q.response == "" end)
-  #   api_call_client = Tesla.client([{Tesla.Middleware.BaseUrl, "https://api.binance.com/"}])
+  def handle_call({:respond, response_ttl}, _from, state) do
+    respond_(state, response_ttl)
+    {:reply, Core.Oracle.get_queries(state.client, state.oracle_id), state}
+  end
 
-  #   Enum.each(unresponded_queries, fn q ->
-  #     {:ok, t} = Tesla.get(api_call_client, "/api/v3/ticker/price")
-  #     {:ok, data} = Poison.decode(t.body)
+  def handle_info(:work, state) do
+    oracle_configuration = Application.get_env(:smart_oracle, :oracle)
+    response_ttl = Keyword.get(oracle_configuration, :response_ttl, 1000)
+    respond_(state, response_ttl)
+    schedule_work()
+    {:noreply, state}
+  end
 
-  #     for d <- data, d["symbol"] == q.query do
-  #       Core.Oracle.respond(state.client, state.oracle_id, q.id, d["price"], response_ttl)
-  #     end
-  #   end)
-  # end
-
-  def respond(state, response_ttl) do
+  defp respond_(state, response_ttl) do
     {:ok, queries} = Core.Oracle.get_queries(state.client, state.oracle_id)
     unresponded_queries = Enum.filter(queries, fn q -> q.response == "" end)
     api_call_client = Tesla.client([{Tesla.Middleware.BaseUrl, "https://api.binance.com/"}])
 
-    # Enum.each(unresponded_queries, fn q ->
-    #   {:ok, t} = Tesla.get(api_call_client, "/api/v3/ticker/price", query: [symbol: q.query])
-
-    #   {:ok, data} = Poison.decode(t.body)
-
-    #   Core.Oracle.respond(state.client, state.oracle_id, q.id, data["price"], response_ttl)
-    # end)
-
-    for q <- unresponded_queries do
-      # IO.inspect q.query, label: "==== q ===="
+    Enum.each(unresponded_queries, fn q ->
       {:ok, t} = Tesla.get(api_call_client, "/api/v3/ticker/price", query: [symbol: q.query])
 
       {:ok, data} = Poison.decode(t.body)
-      IO.inspect(state.client, label: "state.client")
-      IO.inspect(state.oracle_id, label: "state.oracle_id")
-      IO.inspect(q.id, label: "q.id")
-      map = %{data["symbol"] => data["price"]}
-      IO.inspect(map, label: "map")
-      IO.inspect(response_ttl, label: "response_ttl")
+      response_data = %{data["symbol"] => data["price"]}
 
-      Core.Oracle.respond(
-        state.client,
-        state.oracle_id,
-        q.id,
-        map,
-        response_ttl
-      )
-    end
+      Core.Oracle.respond(state.client, state.oracle_id, q.id, response_data, response_ttl)
+    end)
+  end
+
+  defp schedule_work() do
+    Process.send_after(self(), :work, 5000)
   end
 end

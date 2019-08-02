@@ -14,4 +14,5 @@ config :smart_oracle, :oracle,
   query_format: "string",
   response_format: "map(string, string)",
   ttl: %{type: :relative, value: 10_000},
-  query_fee: 10_000
+  query_fee: 10_000,
+  response_ttl: 1000
