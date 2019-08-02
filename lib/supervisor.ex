@@ -1,6 +1,6 @@
 defmodule SmartOracle.Supervisor do
   @moduledoc """
-  Supervisor responsible for all of the worker modules in his folder
+  Supervisor responsible for Smart Oracle.
   """
   alias Core.Client
   use Supervisor
