@@ -34,7 +34,6 @@ defmodule SmartOracle do
     GenServer.call(__MODULE__, {:query, client, query, query_ttl, response_ttl_value})
   end
 
-
   def init([
         %Client{keypair: %{public: <<"ak_", rest::binary>>}} = client,
         query_format,
@@ -78,8 +77,14 @@ defmodule SmartOracle do
     {:reply, queries, state}
   end
 
-  def handle_call({:query, client, query, query_ttl, response_ttl_value}, _from, %{oracle_id: oracle_id, query_ids: query_ids} = state) do
-    {:ok, %{query_id: query_id}} = Core.Oracle.query(client, oracle_id, query, query_ttl, response_ttl_value)
+  def handle_call(
+        {:query, client, query, query_ttl, response_ttl_value},
+        _from,
+        %{oracle_id: oracle_id, query_ids: query_ids} = state
+      ) do
+    {:ok, %{query_id: query_id}} =
+      Core.Oracle.query(client, oracle_id, query, query_ttl, response_ttl_value)
+
     new_state = %{state | query_ids: [query_id | query_ids]}
     {:reply, new_state, new_state}
   end
@@ -88,9 +93,10 @@ defmodule SmartOracle do
     {:ok, queries} = Core.Oracle.get_queries(state.client, state.oracle_id)
     unresponded_queries = Enum.filter(queries, fn q -> q.response != "" end)
     api_call_client = Tesla.client([{Tesla.Middleware.BaseUrl, "https://api.binance.com/"}])
-    # Enum.each(unresponded_queries, fn q ->
-    #   Tesla.get()
-    # end)
+
+    Enum.each(unresponded_queries, fn q ->
+      {:ok, t} = Tesla.get(api_call_client, "/api/v3/ticker/price")
+      Poison.decode(t.body)
+    end)
   end
 end
-

@@ -1,4 +1,7 @@
 defmodule SmartOracle.Supervisor do
+  @moduledoc """
+  Supervisor responsible for all of the worker modules in his folder
+  """
   alias Core.Client
   use Supervisor
 
@@ -9,7 +12,6 @@ defmodule SmartOracle.Supervisor do
   def init(:ok) do
     client_configuration = Application.get_env(:smart_oracle, :client)
     oracle_configuration = Application.get_env(:smart_oracle, :oracle)
-
 
     client =
       Client.new(
