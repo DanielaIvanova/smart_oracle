@@ -89,14 +89,53 @@ defmodule SmartOracle do
     {:reply, new_state, new_state}
   end
 
+  # def respond(state, response_ttl) do
+  #   {:ok, queries} = Core.Oracle.get_queries(state.client, state.oracle_id)
+  #   unresponded_queries = Enum.filter(queries, fn q -> q.response == "" end)
+  #   api_call_client = Tesla.client([{Tesla.Middleware.BaseUrl, "https://api.binance.com/"}])
+
+  #   Enum.each(unresponded_queries, fn q ->
+  #     {:ok, t} = Tesla.get(api_call_client, "/api/v3/ticker/price")
+  #     {:ok, data} = Poison.decode(t.body)
+
+  #     for d <- data, d["symbol"] == q.query do
+  #       Core.Oracle.respond(state.client, state.oracle_id, q.id, d["price"], response_ttl)
+  #     end
+  #   end)
+  # end
+
   def respond(state, response_ttl) do
     {:ok, queries} = Core.Oracle.get_queries(state.client, state.oracle_id)
-    unresponded_queries = Enum.filter(queries, fn q -> q.response != "" end)
+    unresponded_queries = Enum.filter(queries, fn q -> q.response == "" end)
     api_call_client = Tesla.client([{Tesla.Middleware.BaseUrl, "https://api.binance.com/"}])
 
-    Enum.each(unresponded_queries, fn q ->
-      {:ok, t} = Tesla.get(api_call_client, "/api/v3/ticker/price")
-      Poison.decode(t.body)
-    end)
+    # Enum.each(unresponded_queries, fn q ->
+    #   {:ok, t} = Tesla.get(api_call_client, "/api/v3/ticker/price", query: [symbol: q.query])
+
+    #   {:ok, data} = Poison.decode(t.body)
+
+    #   Core.Oracle.respond(state.client, state.oracle_id, q.id, data["price"], response_ttl)
+    # end)
+
+    for q <- unresponded_queries do
+      # IO.inspect q.query, label: "==== q ===="
+      {:ok, t} = Tesla.get(api_call_client, "/api/v3/ticker/price", query: [symbol: q.query])
+
+      {:ok, data} = Poison.decode(t.body)
+      IO.inspect(state.client, label: "state.client")
+      IO.inspect(state.oracle_id, label: "state.oracle_id")
+      IO.inspect(q.id, label: "q.id")
+      map = %{data["symbol"] => data["price"]}
+      IO.inspect(map, label: "map")
+      IO.inspect(response_ttl, label: "response_ttl")
+
+      Core.Oracle.respond(
+        state.client,
+        state.oracle_id,
+        q.id,
+        map,
+        response_ttl
+      )
+    end
   end
 end
