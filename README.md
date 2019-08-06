@@ -47,7 +47,7 @@ mix deps.get
 ```
 iex -S mix 
 ```
-4. As we started our application, the given account will be registered as an oracle and will cycle requests to Aeternity blockchain.
+4. As we started our application, the app will try to connect to a given node, and if the connection is established, the given account will be registered as an oracle and will cycle requests to Aeternity blockchain.
 5. **(OPTIONAL)** You can make a query to your own oracle, in order to test the oracle: 
 ``` elixir
 state = SmartOracle.get_state # Gets the state, needed to get a client
