@@ -3,7 +3,7 @@ defmodule SmartOracle do
   Documentation for SmartOracle.
   """
 
-  alias Core.{Oracle, Client}
+  alias AeppSDK.{Oracle, Client}
   alias AeternityNode.Model.Account
   use GenServer
   require Logger
@@ -17,10 +17,10 @@ defmodule SmartOracle do
   @default_timeout 5000
   @default_error_response %{"error" => "The query is invalid"}
 
-  def start_link([%Client{} = client, query_format, response_format, ttl, query_fee, opts]) do
+  def start_link([%Client{}, _query_format, _response_format, _ttl, _query_fee, _opts] = args) do
     GenServer.start(
       __MODULE__,
-      [%Client{} = client, query_format, response_format, ttl, query_fee, opts],
+      args,
       name: __MODULE__
     )
   end
@@ -34,7 +34,7 @@ defmodule SmartOracle do
   end
 
   def new_query(client, query, query_ttl, response_ttl_value) do
-    GenServer.call(__MODULE__, {:query, client, query, query_ttl, response_ttl_value})
+    GenServer.cast(__MODULE__, {:query, client, query, query_ttl, response_ttl_value})
   end
 
   def init(
@@ -82,28 +82,27 @@ defmodule SmartOracle do
     end
   end
 
+  def handle_cast(
+        {:query, client, query, query_ttl, response_ttl_value},
+        %{oracle_id: oracle_id} = state
+      ) do
+    Oracle.query(client, oracle_id, query, query_ttl, response_ttl_value)
+
+    {:noreply, state}
+  end
+
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
   end
 
   def handle_call(:get_queries, _from, %{client: client, oracle_id: oracle_id} = state) do
-    {:ok, queries} = Core.Oracle.get_queries(client, oracle_id)
+    {:ok, queries} = Oracle.get_queries(client, oracle_id)
     {:reply, queries, state}
-  end
-
-  def handle_call(
-        {:query, client, query, query_ttl, response_ttl_value},
-        _from,
-        %{oracle_id: oracle_id} = state
-      ) do
-    Core.Oracle.query(client, oracle_id, query, query_ttl, response_ttl_value)
-
-    {:reply, :ok, state}
   end
 
   def handle_call({:respond, response_ttl}, _from, state) do
     respond_(state, response_ttl)
-    {:reply, Core.Oracle.get_queries(state.client, state.oracle_id), state}
+    {:reply, Oracle.get_queries(state.client, state.oracle_id), state}
   end
 
   def handle_info(:work, state) do

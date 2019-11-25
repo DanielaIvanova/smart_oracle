@@ -24,7 +24,7 @@ config :smart_oracle, :client,
   network_id: "my_test",
   url: "http://localhost:3013/v2",
   internal_url: "http://localhost:3013/v2",
-  gas_price: 1_000_000,
+  gas_price: 1_000_000_000,
   auth: []
 
 config :smart_oracle, :oracle,

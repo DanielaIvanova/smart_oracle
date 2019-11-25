@@ -2,7 +2,7 @@ defmodule SmartOracle.Supervisor do
   @moduledoc """
   Supervisor responsible for Smart Oracle.
   """
-  alias Core.Client
+  alias AeppSDK.Client
   use Supervisor
 
   def start_link(_args) do
@@ -22,7 +22,7 @@ defmodule SmartOracle.Supervisor do
         Keyword.get(client_configuration, :network_id),
         Keyword.get(client_configuration, :url),
         Keyword.get(client_configuration, :internal_url),
-        Keyword.get(client_configuration, :gas_price)
+        gas_price: Keyword.get(client_configuration, :gas_price)
       )
 
     query_format = Keyword.get(oracle_configuration, :query_format)

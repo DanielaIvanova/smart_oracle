@@ -22,7 +22,7 @@ defmodule SmartOracle.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:aepp_sdk_elixir, github: "aeternity/aepp-sdk-elixir", tag: "v0.2.0"}
+      {:aepp_sdk_elixir, github: "aeternity/aepp-sdk-elixir", tag: "v0.5.1"}
     ]
   end
 end
