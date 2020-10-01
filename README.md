@@ -1,5 +1,5 @@
 # Smart Oracle
-## Description
+## Description  
 **Smart Oracle** is an Elixir console application, made to automate the oracle job. 
 User can load any account or even existing oracle in it.
 
