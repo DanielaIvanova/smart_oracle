@@ -12,7 +12,7 @@ The next step is that our oracle will be making cycling requests to **AEternity 
 This approach allows us to implement any backend logic as the handling the data which is comming from outside of the blockchain and data providers can be almost everything.
 ## Usage
 
-1. First of all you have set `config.exs` file, by providing your information. This is an example of `config.exs`:
+1. First of all you have set `config.exs` file, by providing your information. This is an example of `config.exs`: 
 
 ``` elixir
 use Mix.Config
