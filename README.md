@@ -36,7 +36,6 @@ config :smart_oracle, :oracle,
 ```
 **NOTE:** This config will work only if you have your Aeternity node run at `http://localhost:3013/v2`
 
-
 2. Clone the project and get the dependencies:
 ```
 git clone https://github.com/DanielaIvanova/smart_oracle
