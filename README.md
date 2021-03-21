@@ -5,7 +5,7 @@ User can load any account or even existing oracle in it.
 
 If the given account **is not** an oracle yet, we register it.
 
-If the given account **is already** an oracle we proceed to next step.
+If the given account **is already** an oracle we proceed to next step. 
 
 The next step is that our oracle will be making cycling requests to **AEternity blockchain node** and will list all queries sent to it, process them(for example we decided to connect it to Binance API, in order to get the trading course) and if the query is in right format(Like "BTCLTC"), the oracle will try to get the information from the data provider and if it succeeds, will respond to the query.
 
